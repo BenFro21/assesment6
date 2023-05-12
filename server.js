@@ -1,7 +1,21 @@
+require('dotenv').config()
 const express = require("express");
 const bots = require("./src/botsData");
 const shuffle = require("./src/shuffle");
 
+const {ROLLBAR_ACCESS_TOKEN} = process.env
+
+// include and initialize the rollbar library with your access token
+let Rollbar = require('rollbar');
+const botsData = require('./src/botsData');
+let rollbar = new Rollbar({
+  accessToken:`${ROLLBAR_ACCESS_TOKEN}`,
+  captureUncaught: true,
+  captureUnhandledRejections: true,
+})
+rollbar.log('Hello world!')
+
+let botsArr = bots
 const playerRecord = {
   wins: 0,
   losses: 0,
@@ -38,6 +52,7 @@ const calculateHealthAfterAttack = ({ playerDuo, compDuo }) => {
 
 app.get("/api/robots", (req, res) => {
   try {
+    rollbar.log(`${botsArr.map((bot) => bot.name)} was added to the list`)
     res.status(200).send(botsArr);
   } catch (error) {
     console.error("ERROR GETTING BOTS", error);
@@ -47,6 +62,7 @@ app.get("/api/robots", (req, res) => {
 
 app.get("/api/robots/shuffled", (req, res) => {
   try {
+    rollbar.info('Robots shuffled hit')
     let shuffled = shuffle(bots);
     res.status(200).send(shuffled);
   } catch (error) {
@@ -66,9 +82,11 @@ app.post("/api/duel", (req, res) => {
 
     // comparing the total health to determine a winner
     if (compHealth > playerHealth) {
+      rollbar.info('User lost')
       playerRecord.losses += 1;
       res.status(200).send("You lost!");
     } else {
+      rollbar.info('User won')
       playerRecord.losses += 1;
       res.status(200).send("You won!");
     }
@@ -86,6 +104,6 @@ app.get("/api/player", (req, res) => {
     res.sendStatus(400);
   }
 });
-app.listen(8000, () => {
-  console.log(`Listening on 8000`);
+app.listen(3500, () => {
+  console.log(`Listening on 3500`);
 });
